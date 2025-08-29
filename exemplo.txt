@@ -1,0 +1,314 @@
+https://liveestacio-my.sharepoint.com/:f:/g/personal/32552055818_professores_estacio_br/Ev2fwGXKeNFMqcEse68pgbcBDHi5sebwyfTJUdnblA_whA?e=O4T53w
+
+https://colab.research.google.com/drive/1FgSCnZIh5i6qfq-TDZs5wCRa1onrmGy9?usp=sharin
+
+Blocos que iniciam com # deve ser texto no notebook.
+
+# Aula 4 — Manipulação de Strings e Exceções em Arquivos
+Disciplina: **ARA0095 – Desenvolvimento Rápido de Aplicações em Python**  
+Professor: **José Pedro Calistro Torres de Miranda**
+Nome do Aluno *Fulano*
+Matricula *123mudar*
+
+## Objetivos da aula
+- Aplicar métodos de **manipulação de strings** (`strip`, `split`, `join`, validações).
+- Identificar e tratar **exceções** comuns em operações com arquivos.
+- Consolidar **boas práticas** de leitura/escrita e mensagens de erro.
+
+## Manipulação de Strings — teoria + exemplos
+**Principais métodos:**  
+- `strip()` remove espaços em excesso e quebras de linha;
+- `split(sep)` separa a string em uma **lista** usando um delimitador;
+- `join(iterável)` junta os itens de uma lista em uma **string** com um delimitador;
+- `isalpha()` e `isnumeric()` ajudam a **validar** conteúdo textual.
+
+
+# Exemplos comentados de manipulação de strings
+
+!!!!A seguir colocar blocos de código e rodar individualmente:
+
+# .strip() remove espaços e quebras de linha nas extremidades
+nome_sujo = "  João 
+"
+nome_limpo = nome_sujo.strip()
+print("Antes:", repr(nome_sujo), "Depois:", repr(nome_limpo))
+
+# .split() divide a string em lista com base em um delimitador
+linha = "Maria,8.5"
+partes = linha.split(",")  # ["Maria", "8.5"]
+print("Split:", partes)
+
+# .join() junta itens de uma lista em uma string usando um delimitador
+campos = ["a", "b", "c"]
+linha_csv = ",".join(campos)
+print("Join:", linha_csv)
+
+# Validações simples: isalpha() e isnumeric()
+print("isalpha('Maria') =>", "Maria".isalpha())
+print("isnumeric('12345') =>", "12345".isnumeric())
+print("isnumeric('8.5') =>", "8.5".isnumeric(), "  # Atenção: ponto decimal não é dígito puro!")
+
+
+***Colocar como texto e dar destaque!!!
+{
+## Limpando e validando registros (strings irregulares)
+Vamos simular uma lista de registros com erros comuns e filtrar/limpar o que for possível.
+}
+
+
+Còdigo:
+# Lista com registros variados (alguns incorretos)
+registros = [
+    "João,8.5",
+    " Ana , 7.0 ",     # espaços a mais
+    "",                 # linha vazia
+    "Maria,Oito",       # nota não numérica
+    "Ana5,9.0",         # nome com dígito
+    "Carlos,10"
+]
+
+
+registros_validos = []
+
+for linha in registros:
+    # 1) normalizar a string
+    linha = linha.strip()
+    if not linha:
+        # pular linhas vazias
+        continue
+    
+    # 2) separar em 2 partes: nome e nota
+    partes = [p.strip() for p in linha.split(",")]
+    if len(partes) != 2:
+        print("Formato inválido:", repr(linha))
+        continue
+    
+    nome, nota_txt = partes
+    
+    # 3) validar nome (somente letras e espaços simples)
+    nome_sem_espacos = nome.replace(" ", "")
+    if not nome_sem_espacos.isalpha():
+        print("Nome inválido:", repr(nome), "(deve conter apenas letras e espaços)")
+        continue
+    
+    # 4) validar nota (float)
+    try:
+        nota = float(nota_txt.replace(",", "."))  # aceita "8,5" convertendo para "8.5"
+    except ValueError:
+        print("Nota inválida:", repr(nota_txt))
+        continue
+    
+    # 5) validar faixa da nota
+    if not (0 <= nota <= 10):
+        print("Nota fora da faixa [0..10]:", nota)
+        continue
+    
+    registros_validos.append((nome, nota))
+
+print("Registros válidos:", registros_validos)
+
+
+
+TEXTO
+
+
+## Tratamento de exceções com arquivos
+Estrutura geral:
+```python
+try:
+    # operação arriscada
+except ExcecaoEspecifica:
+    # tratamento claro
+finally:
+    # limpeza (opcional)
+```
+
+
+
+Código:
+
+
+
+
+# Exemplo: leitura segura de um arquivo que pode não existir
+
+caminho = "dados_inexistentes.txt"
+
+try:
+    with open(caminho, "r", encoding="utf-8") as f:
+        conteudo = f.read()
+        print("Conteúdo lido:", conteudo[:60], "...")
+except FileNotFoundError:
+    print(f"[ERRO] Arquivo não encontrado: {caminho}")
+except PermissionError:
+    print(f"[ERRO] Permissão negada ao acessar: {caminho}")
+except Exception as e:
+    # Captura genérica (evite usar sozinha na prática; prefira exceções específicas)
+    print(f"[ERRO] Ocorreu um problema inesperado: {type(e).__name__} - {e}")
+
+
+TEXTO{
+## Sistema de notas — funções com validação e exceções
+Implementaremos `inserir_nota` e `listar_notas` com **tratamento de erros** e **limpeza de dados**.
+}
+
+CÓDIGO{
+from typing import List, Tuple
+
+def inserir_nota(nome: str, nota: float, caminho: str = "notas.txt") -> bool:
+    """Insere 'nome,nota' em uma nova linha no arquivo.
+    
+    Retorna True em caso de sucesso e False caso haja algum problema previsto.
+    """
+    # Limpeza e validação do nome
+    if not isinstance(nome, str):
+        print("[ERRO] Nome deve ser string.")
+        return False
+    
+    nome_limpo = nome.strip()
+    if not nome_limpo or not nome_limpo.replace(" ", "").isalpha():
+        print(f"[ERRO] Nome inválido: {repr(nome)}")
+        return False
+    
+    # Validação da nota
+    try:
+        nota_val = float(nota)
+    except (ValueError, TypeError):
+        print(f"[ERRO] Nota inválida: {repr(nota)} (deve ser número)")
+        return False
+    
+    if not (0 <= nota_val <= 10):
+        print(f"[ERRO] Nota fora da faixa [0..10]: {nota_val}")
+        return False
+    
+    # Escrita com tratamento de exceções
+    try:
+        with open(caminho, "a", encoding="utf-8") as f:
+            f.write(f"{nome_limpo},{nota_val}\n")
+        return True
+    except PermissionError:
+        print(f"[ERRO] Sem permissão para escrever em: {caminho}")
+        return False
+    except FileNotFoundError:
+        # Em modo 'a' o Python cria o arquivo se o diretório existir. 
+        # Se cair aqui, geralmente é porque o diretório não existe.
+        print(f"[ERRO] Caminho inexistente: {caminho}")
+        return False
+    except Exception as e:
+        print(f"[ERRO] Falha inesperada ao escrever: {type(e).__name__} - {e}")
+        return False
+
+
+def listar_notas(caminho: str = "notas.txt") -> List[Tuple[str, float]]:
+    """Lê o arquivo de notas e retorna uma lista de tuplas (nome, nota).
+    
+    Linhas inválidas são ignoradas, com aviso.
+    """
+    resultados: List[Tuple[str, float]] = []
+    try:
+        with open(caminho, "r", encoding="utf-8") as f:
+            for linha in f:
+                linha = linha.strip()
+                if not linha:
+                    continue
+                partes = [p.strip() for p in linha.split(",")]
+                if len(partes) != 2:
+                    print("[AVISO] Linha ignorada (formato incorreto):", repr(linha))
+                    continue
+                nome, nota_txt = partes
+                if not nome.replace(" ", "").isalpha():
+                    print("[AVISO] Nome inválido, linha ignorada:", repr(linha))
+                    continue
+                try:
+                    nota = float(nota_txt.replace(",", "."))
+                except ValueError:
+                    print("[AVISO] Nota inválida, linha ignorada:", repr(linha))
+                    continue
+                resultados.append((nome, nota))
+    except FileNotFoundError:
+        print(f"[ERRO] Arquivo não encontrado: {caminho}")
+    except PermissionError:
+        print(f"[ERRO] Permissão negada ao acessar: {caminho}")
+    except Exception as e:
+        print(f"[ERRO] Falha inesperada ao ler: {type(e).__name__} - {e}")
+    return resultados
+
+
+# Teste rápido (cria/append)
+inserir_nota("Maria", 8.5)
+inserir_nota("João", 7.0)
+inserir_nota("Ana5", 9.0)   # deve falhar por nome inválido
+listar_notas()[:5]
+
+
+
+TEXTO MARKDOWN
+
+
+## Migrando formatos: CSV e JSON
+Vamos exportar/importar os registros válidos para CSV e JSON, mantendo a validação.
+
+
+CÓD
+
+import csv, json
+from typing import Iterable, Dict
+
+def exportar_csv(registros: Iterable[tuple], caminho: str = "notas.csv") -> bool:
+    """Exporta uma sequência de (nome, nota) para CSV com header."""
+    try:
+        with open(caminho, "w", newline="", encoding="utf-8") as f:
+            campos = ["nome", "nota"]
+            w = csv.DictWriter(f, fieldnames=campos, delimiter=",")
+            w.writeheader()
+            for nome, nota in registros:
+                w.writerow({"nome": nome, "nota": float(nota)})
+        return True
+    except Exception as e:
+        print(f"[ERRO] Falha ao exportar CSV: {type(e).__name__} - {e}")
+        return False
+
+def importar_csv(caminho: str = "notas.csv"):
+    """Importa registros (nome, nota) de um CSV válido."""
+    out = []
+    try:
+        with open(caminho, "r", encoding="utf-8") as f:
+            r = csv.DictReader(f, delimiter=",")
+            for row in r:
+                try:
+                    out.append((row["nome"], float(row["nota"])))
+                except Exception:
+                    print("[AVISO] Linha ignorada no CSV:", row)
+    except Exception as e:
+        print(f"[ERRO] Falha ao importar CSV: {type(e).__name__} - {e}")
+    return out
+
+def exportar_json(registros: Iterable[tuple], caminho: str = "notas.json") -> bool:
+    """Exporta uma sequência de (nome, nota) para JSON."""
+    dados = {"alunos": [{"nome": n, "nota": float(x)} for n, x in registros]}
+    try:
+        with open(caminho, "w", encoding="utf-8") as f:
+            json.dump(dados, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception as e:
+        print(f"[ERRO] Falha ao exportar JSON: {type(e).__name__} - {e}")
+        return False
+
+def importar_json(caminho: str = "notas.json"):
+    """Importa registros (nome, nota) de um JSON válido."""
+    try:
+        with open(caminho, "r", encoding="utf-8") as f:
+            dados = json.load(f)
+        return [(a["nome"], float(a["nota"])) for a in dados.get("alunos", [])]
+    except Exception as e:
+        print(f"[ERRO] Falha ao importar JSON: {type(e).__name__} - {e}")
+        return []
+
+# Exportar a partir do TXT (já gravado) e reimportar como teste
+regs = listar_notas()
+exportar_csv(regs)
+exportar_json(regs)
+importar_csv()[:3], importar_json()[:3]
+
+
+D
