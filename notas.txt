@@ -1,0 +1,12 @@
+fabricio,1.0
+ana,9.4
+lucas,4.4
+pedro,10.0
+helen,6.3
+matheus,5.0
+fabricio,1.0
+ana,9.4
+lucas,4.4
+pedro,10.0
+helen,6.3
+matheus,5.0
